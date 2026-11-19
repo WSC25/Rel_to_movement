@@ -8,7 +8,7 @@ from sklearn.neighbors import NearestNeighbors
 # 0. 網頁頁面基本設定
 # ==========================================
 st.set_page_config(page_title="投球表現與相似投手分析", page_icon="⚾", layout="wide")
-st.title("⚾ 投球表現預測 & 相似投手比對(單一一顆 非投手平均)")
+st.title("⚾ 投球表現預測 & 相似投手比對(挑出的是比賽中的其中一顆 而非投手整體平均)")
 
 # ==========================================
 # 1. 讀取資料與訓練模型（使用快取加速，避免每次點擊都重訓）
@@ -121,7 +121,7 @@ top_n = st.sidebar.slider("顯示相似投手數量", min_value=3, max_value=20,
 # ==========================================
 # 4. 主畫面輸出區
 # ==========================================
-st.subheader(f"📊 1. 模型預測表現結果（球種：{selected_pitch}）")
+st.subheader(f"📊 1. 預測表現結果（球種：{selected_pitch}）")
 
 preds = predict_pitch_performance_dual_unit(selected_pitch, rel_height_cm, rel_side_cm, extension_cm, rel_speed_kmh)
 
