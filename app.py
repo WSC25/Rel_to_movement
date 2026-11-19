@@ -10,6 +10,21 @@ from sklearn.neighbors import NearestNeighbors
 st.set_page_config(page_title="投球表現與相似投手分析", page_icon="⚾", layout="wide")
 st.title("⚾ 投球表現預測 & 相似投手比對(挑出的是比賽中的其中一顆 而非投手整體平均)")
 
+# 各球場推算投手丘高度 (cm)
+MOUND_HEIGHT_CM = {
+    "澄清湖": 29.62,
+    "屏東": 29.28,
+    "天母": 28.74,
+    "桃園": 28.27,
+    "新莊": 27.65,
+    "青埔": 27.57,
+    "亞太主": 27.20,
+    "台鋼科大": 27.15,
+    "大巨蛋": 26.73,
+    "斗六": 25.56,
+    "台中": 25.40,
+}
+
 # ==========================================
 # 1. 讀取資料與訓練模型（使用快取加速，避免每次點擊都重訓）
 # ==========================================
@@ -112,8 +127,15 @@ def find_similar_pitchers(df, pitch_type, rel_height_cm, rel_side_cm, extension_
 st.sidebar.header("🎛️ 輸入投球參數 (公制)")
 
 selected_pitch = st.sidebar.selectbox("選擇球種", available_pitches, index=0)
+selected_stadium = st.sidebar.selectbox("選擇球場", list(MOUND_HEIGHT_CM.keys()), index=0)
+mound_height_cm = MOUND_HEIGHT_CM[selected_stadium]
+st.sidebar.caption(f"推算投手丘高度：{mound_height_cm:.2f} cm")
+
 rel_speed_kmh = st.sidebar.number_input("球速 (km/h)", min_value=80.0, max_value=175.0, value=137.0, step=0.5)
-rel_height_cm = st.sidebar.number_input("出手高度 (cm)", min_value=50.0, max_value=250.0, value=177.0, step=1.0)
+raw_rel_height_cm = st.sidebar.number_input("出手高度 (cm)", min_value=50.0, max_value=250.0, value=177.0, step=1.0)
+rel_height_cm = raw_rel_height_cm - mound_height_cm
+st.sidebar.caption(f"扣除投手丘後出手高度：{rel_height_cm:.2f} cm")
+
 rel_side_cm = st.sidebar.number_input("側向位置 (cm)", min_value=-150.0, max_value=150.0, value=-46.0, step=1.0)
 extension_cm = st.sidebar.number_input("延伸距離 (cm)", min_value=80.0, max_value=250.0, value=147.0, step=1.0)
 top_n = st.sidebar.slider("顯示相似投手數量", min_value=3, max_value=20, value=20)
@@ -121,7 +143,7 @@ top_n = st.sidebar.slider("顯示相似投手數量", min_value=3, max_value=20,
 # ==========================================
 # 4. 主畫面輸出區
 # ==========================================
-st.subheader(f"📊 1. 預測表現結果（球種：{selected_pitch}）")
+st.subheader(f"📊 1. 預測表現結果（球種：{selected_pitch}｜球場：{selected_stadium}，扣除丘高 {mound_height_cm:.2f} cm 後高度 {rel_height_cm:.2f} cm）")
 
 preds = predict_pitch_performance_dual_unit(selected_pitch, rel_height_cm, rel_side_cm, extension_cm, rel_speed_kmh)
 
