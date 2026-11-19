@@ -7,8 +7,8 @@ from sklearn.neighbors import NearestNeighbors
 # ==========================================
 # 0. 網頁頁面基本設定
 # ==========================================
-st.set_page_config(page_title="投球表現與相似投手分析系統", page_icon="⚾", layout="wide")
-st.title("⚾ 投球表現預測 & 相似投手比對系統")
+st.set_page_config(page_title="投球表現與相似投手分析", page_icon="⚾", layout="wide")
+st.title("⚾ 投球表現預測 & 相似投手比對(單一一顆 非投手平均)")
 
 # ==========================================
 # 1. 讀取資料與訓練模型（使用快取加速，避免每次點擊都重訓）
@@ -138,7 +138,7 @@ for idx, (metric, (primary_val, sub_val)) in enumerate(preds.items()):
 
 st.divider()
 
-st.subheader(f"🔍 2. 與輸入條件最相似的前 {top_n} 位投手（單球紀錄）")
+st.subheader(f"🔍 2. 與輸入條件最相似的前 {top_n} 位投手（單一球比賽紀錄）")
 similar_df = find_similar_pitchers(df, selected_pitch, rel_height_cm, rel_side_cm, extension_cm, rel_speed_kmh, top_n=top_n)
 
 if not similar_df.empty:
