@@ -29,7 +29,7 @@ MOUND_HEIGHT_CM = {
 # 1. 讀取資料與訓練模型（使用快取加速，避免每次點擊都重訓）
 # ==========================================
 pitch_type_col = '球種'
-features = ['RelHeight_Correct', 'RelSide', 'RelSpeed']
+features = ['RelHeight_Correct', 'RelSide','Extension', 'RelSpeed']
 targets = [
     'VertBreak', 'InducedVertBreak', 'HorzBreak', 
     'VertApprAngle', 'HorzApprAngle', 'Stuff+'
