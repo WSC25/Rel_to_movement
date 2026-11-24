@@ -238,7 +238,7 @@ def build_xy_scatter_chart(
                 x=alt.X(f"{x_col}:Q", title=x_title),
                 y=alt.Y(f"{y_col}:Q", title=y_title),
                 color=alt.value("#94A3B8"),
-                tooltip=[alt.Tooltip(f"{x_col}:Q", format=".2f"), alt.Tooltip(f"{y_col}:Q", format=".2f")]
+                tooltip=[alt.Tooltip(f"{x_col}:Q", format=".2f"), alt.Tooltip(f"{y_col}:Q", format=".2f")],
             )
         )
 
@@ -255,4 +255,36 @@ def build_xy_scatter_chart(
                 alt.Tooltip(f"{y_col}:Q", format=".2f"),
             ])
             layers.append(
-                alt.Chart
+                alt.Chart(sim_clean)
+                .mark_circle(size=65, opacity=0.85, stroke="#FFFFFF", strokeWidth=1)
+                .encode(
+                    x=alt.X(f"{x_col}:Q", title=x_title),
+                    y=alt.Y(f"{y_col}:Q", title=y_title),
+                    color=alt.value("#2563EB"),
+                    tooltip=tooltip_cols,
+                )
+            )
+
+    if query_x is not None and query_y is not None and pd.notna(query_x) and pd.notna(query_y):
+        q_df = pd.DataFrame({"x_val": [float(query_x)], "y_val": [float(query_y)]})
+        layers.append(
+            alt.Chart(q_df)
+            .mark_point(shape="diamond", size=180, filled=True, color="#DC2626", stroke="#111827", strokeWidth=1.5)
+            .encode(
+                x=alt.X("x_val:Q", title=x_title),
+                y=alt.Y("y_val:Q", title=y_title),
+                tooltip=[
+                    alt.Tooltip("x_val:Q", title=x_title, format=".2f"),
+                    alt.Tooltip("y_val:Q", title=y_title, format=".2f"),
+                ],
+            )
+        )
+
+    if not layers:
+        return alt.Chart(pd.DataFrame({"x": [], "y": []})).mark_point().properties(title=chart_title, height=280)
+
+    return (
+        alt.layer(*layers)
+        .properties(title=chart_title, height=290)
+        .interactive()
+    )
