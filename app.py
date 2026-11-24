@@ -234,6 +234,7 @@ def build_xy_scatter_chart(
     query_x,
     query_y,
     show_zero_axes=False,
+    center_zero=True,
     chart_height=360,
 ):
     layers = []
