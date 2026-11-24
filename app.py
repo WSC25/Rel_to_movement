@@ -471,7 +471,7 @@ with row2_col2:
     st.altair_chart(
         build_xy_scatter_chart(
             bg_pitch_df, sim_plot_df, "RelSide_cm", "Extension_calibrated_cm",
-            "RelSide 側度 (cm)", "Extension_calibrated 校正後延伸 (cm)", "延伸 - 出手側度 圖 (cm)",
+            "RelSide 側度 (cm)", "Extension_calibrated 校正後延伸 (cm)", "Y=0 為投手板 延伸 - 出手側度 圖 (cm)",
             rel_side_cm, calibrated_extension_cm,
             show_zero_axes=False,
             chart_height=mid_chart_height,
