@@ -352,7 +352,7 @@ calibrated_extension_feet = calibrate_extension_feet(raw_extension_feet, selecte
 calibrated_extension_cm = calibrated_extension_feet * 30.48
 st.sidebar.caption(f"球場校正後延伸：{calibrated_extension_cm:.2f} cm ({calibrated_extension_feet:.2f} ft)")
 
-top_n = st.sidebar.slider("顯示相似投手數量", min_value=3, max_value=20, value=20)
+top_n = st.sidebar.slider("顯示相似投手數量", min_value=3, max_value=30, value=30)
 
 # ==========================================
 # 4. 主畫面輸出區
@@ -487,7 +487,7 @@ st.divider()
 st.subheader(f"🔍 2. 與輸入條件最相似的前 {top_n} 位投手（單一球比賽紀錄）")
 
 if not similar_df.empty:
-    target_cols = ['年', 'pName', '球種', 'RelHeight_Correct', 'RelSide', raw_ext_col, cal_ext_col, 'RelSpeed',
+    target_cols = ['年', '球場','pName', '球種', 'RelHeight_Correct', 'RelSide', raw_ext_col, cal_ext_col, 'RelSpeed',
                    'VertBreak', 'InducedVertBreak', 'HorzBreak', 'Stuff+']
     display_cols = [c for c in target_cols if c in similar_df.columns]
     st.dataframe(similar_df[display_cols], use_container_width=True, hide_index=True)
