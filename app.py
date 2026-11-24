@@ -269,7 +269,7 @@ def build_xy_scatter_chart(bg_df, sim_df, x_col, y_col, x_title, y_title, chart_
 # ==========================================
 # 3. 網頁側邊欄：使用者輸入控制區
 # ==========================================
-st.sidebar.header("🎛️ 輸入投球參數 (公制)")
+st.sidebar.header("輸入投球參數 (公制)")
 
 selected_pitch = st.sidebar.selectbox("選擇球種", available_pitches, index=0)
 selected_stadium = st.sidebar.selectbox("選擇球場", list(MOUND_HEIGHT_CM.keys()), index=0)
@@ -295,7 +295,7 @@ top_n = st.sidebar.slider("顯示相似投手數量", min_value=3, max_value=20,
 # 4. 主畫面輸出區
 # ==========================================
 st.subheader(
-    f"📊 1. 預測表現結果（球種：{selected_pitch}｜球場：{selected_stadium}，"
+    f"1. 預測表現結果（球種：{selected_pitch}｜球場：{selected_stadium}，"
     f"扣除丘高 {mound_height_cm:.2f} cm 後高度 {rel_height_cm:.2f} cm｜"
     f"校正後延伸 {calibrated_extension_cm:.2f} cm）"
 )
@@ -320,7 +320,7 @@ similar_df = find_similar_pitchers(
     df, selected_pitch, rel_height_cm, rel_side_cm, calibrated_extension_feet, rel_speed_kmh, top_n=top_n
 )
 
-st.subheader("📈 投球軌跡與出手幾何 X-Y 圖（灰點：同球種歷史｜藍點：相似投手｜紅菱形：目前輸入/預測）")
+st.subheader("投球位移圖（灰點：所有同類球種｜藍點：出手相似投手｜紅菱形：目前輸入/預測）")
 
 bg_pitch_df = df[df[pitch_type_col] == selected_pitch].copy()
 for col_in, col_cm in [
