@@ -76,17 +76,14 @@ MOUND_HEIGHT_CM = {
     "台中": 25.40,
 }
 
-# 將 extension_calibrator.joblib 與此 .py 放在同一資料夾一起上傳
 CALIBRATOR_PATH = Path(__file__).resolve().parent / "extension_calibrator.joblib"
 
 # ==========================================
-# 1. 讀取資料、校正模型與訓練預測模型（使用快取加速，避免每次點擊都重訓）
+# 1. 讀取資料、校正模型與訓練預測模型
 # ==========================================
 pitch_type_col = '球種'
 raw_ext_col = 'Extension'
 cal_ext_col = 'Extension_calibrated'
-
-# 模型訓練、預測與相似比對皆使用校正後的 Extension_calibrated
 features = ['RelHeight_Correct', 'RelSide', cal_ext_col, 'RelSpeed']
 targets = [
     'VertBreak', 'InducedVertBreak', 'HorzBreak',
@@ -107,7 +104,6 @@ if calibrator is None:
 
 
 def calibrate_extension_feet(raw_extension_feet, stadium):
-    """將原始 Extension（英制）依球場扣除系統性偏差，回傳校正後 Extension（英制）"""
     if calibrator is not None and hasattr(calibrator, 'offsets_'):
         offset = float(calibrator.offsets_.get(stadium, 0.0))
         return float(raw_extension_feet) - offset
@@ -116,10 +112,8 @@ def calibrate_extension_feet(raw_extension_feet, stadium):
 
 @st.cache_resource
 def load_data_and_train(_calibrator):
-    # ⚠️ 請將這裡換成你實際的資料檔案路徑（例如 parquet、CSV 或 Excel）
     df = pd.read_parquet('pitch_data.parquet')
 
-    # 保留原始 Extension 欄位，並產生 Extension_calibrated 供訓練與預測使用
     if cal_ext_col not in df.columns and raw_ext_col in df.columns:
         if _calibrator is not None and hasattr(_calibrator, 'transform') and '球場' in df.columns:
             df = _calibrator.transform(df, stadium_col='球場', target_col=raw_ext_col, output_col=cal_ext_col)
@@ -140,14 +134,12 @@ def load_data_and_train(_calibrator):
     return df, models
 
 
-# 載入資料與模型
 try:
     df, models = load_data_and_train(calibrator)
     available_pitches = list(models.keys())
 except Exception as e:
     st.error(f"讀取資料失敗，請確認 'pitch_data.parquet' 檔案是否存在。錯誤訊息：{e}")
     st.stop()
-
 
 # ==========================================
 # 2. 核心分析函數
@@ -157,7 +149,6 @@ def predict_pitch_performance_dual_unit(pitch_type, rel_height_cm, rel_side_cm, 
     rel_side_feet = rel_side_cm / 30.48
     relspeed_mph = relspeed_kmh / 1.60934
 
-    # 預測模型輸入使用校正後的 Extension_calibrated（英制）
     X_new = pd.DataFrame([[rel_height_feet, rel_side_feet, calibrated_extension_feet, relspeed_mph]], columns=features)
 
     predictions = {}
@@ -181,7 +172,6 @@ def find_similar_pitchers(df, pitch_type, rel_height_cm, rel_side_cm, calibrated
 
     pitcher_col = 'pName' if 'pName' in sub_df.columns else None
 
-    # 相似比對使用校正後的 Extension_calibrated（英制）
     input_features = [[
         rel_height_cm / 30.48,
         rel_side_cm / 30.48,
@@ -214,17 +204,7 @@ def find_similar_pitchers(df, pitch_type, rel_height_cm, rel_side_cm, calibrated
     return sub_df.iloc[selected_indices].copy()
 
 
-def build_xy_scatter_chart(
-    bg_df,
-    sim_df,
-    x_col,
-    y_col,
-    x_title,
-    y_title,
-    chart_title,
-    query_x,
-    query_y,
-):
+def build_xy_scatter_chart(bg_df, sim_df, x_col, y_col, x_title, y_title, chart_title, query_x, query_y):
     layers = []
 
     if not bg_df.empty:
@@ -283,8 +263,144 @@ def build_xy_scatter_chart(
     if not layers:
         return alt.Chart(pd.DataFrame({"x": [], "y": []})).mark_point().properties(title=chart_title, height=280)
 
-    return (
-        alt.layer(*layers)
-        .properties(title=chart_title, height=290)
-        .interactive()
+    return alt.layer(*layers).properties(title=chart_title, height=290).interactive()
+
+
+# ==========================================
+# 3. 網頁側邊欄：使用者輸入控制區
+# ==========================================
+st.sidebar.header("🎛️ 輸入投球參數 (公制)")
+
+selected_pitch = st.sidebar.selectbox("選擇球種", available_pitches, index=0)
+selected_stadium = st.sidebar.selectbox("選擇球場", list(MOUND_HEIGHT_CM.keys()), index=0)
+mound_height_cm = MOUND_HEIGHT_CM[selected_stadium]
+st.sidebar.caption(f"推算投手丘高度：{mound_height_cm:.2f} cm")
+
+rel_speed_kmh = st.sidebar.number_input("球速 (km/h)", min_value=80.0, max_value=175.0, value=137.0, step=0.5)
+raw_rel_height_cm = st.sidebar.number_input("出手高度 (cm)", min_value=50.0, max_value=250.0, value=177.0, step=1.0)
+rel_height_cm = raw_rel_height_cm - mound_height_cm
+st.sidebar.caption(f"扣除投手丘後出手高度：{rel_height_cm:.2f} cm")
+
+rel_side_cm = st.sidebar.number_input("側向位置 (cm)", min_value=-150.0, max_value=150.0, value=-46.0, step=1.0)
+raw_extension_cm = st.sidebar.number_input("原始延伸距離 Extension (cm)", min_value=80.0, max_value=250.0, value=147.0, step=1.0)
+
+raw_extension_feet = raw_extension_cm / 30.48
+calibrated_extension_feet = calibrate_extension_feet(raw_extension_feet, selected_stadium)
+calibrated_extension_cm = calibrated_extension_feet * 30.48
+st.sidebar.caption(f"球場校正後延伸：{calibrated_extension_cm:.2f} cm ({calibrated_extension_feet:.2f} ft)")
+
+top_n = st.sidebar.slider("顯示相似投手數量", min_value=3, max_value=20, value=20)
+
+# ==========================================
+# 4. 主畫面輸出區
+# ==========================================
+st.subheader(
+    f"📊 1. 預測表現結果（球種：{selected_pitch}｜球場：{selected_stadium}，"
+    f"扣除丘高 {mound_height_cm:.2f} cm 後高度 {rel_height_cm:.2f} cm｜"
+    f"校正後延伸 {calibrated_extension_cm:.2f} cm）"
+)
+
+preds, raw_preds = predict_pitch_performance_dual_unit(
+    selected_pitch, rel_height_cm, rel_side_cm, calibrated_extension_feet, rel_speed_kmh
+)
+
+cols = st.columns(3)
+for idx, (metric, (primary_val, sub_val)) in enumerate(preds.items()):
+    with cols[idx % 3]:
+        st.metric(
+            label=metric,
+            value=primary_val,
+            delta=f"英制: {sub_val}" if sub_val else None,
+            delta_color="off"
+        )
+
+st.divider()
+
+similar_df = find_similar_pitchers(
+    df, selected_pitch, rel_height_cm, rel_side_cm, calibrated_extension_feet, rel_speed_kmh, top_n=top_n
+)
+
+st.subheader("📈 投球軌跡與出手幾何 X-Y 圖（灰點：同球種歷史｜藍點：相似投手｜紅菱形：目前輸入/預測）")
+
+bg_pitch_df = df[df[pitch_type_col] == selected_pitch].copy()
+for col_in, col_cm in [
+    ('InducedVertBreak', 'IVB_cm'),
+    ('VertBreak', 'VB_cm'),
+    ('HorzBreak', 'HB_cm'),
+    ('RelHeight_Correct', 'RelHeight_cm'),
+    ('RelSide', 'RelSide_cm'),
+    (cal_ext_col, 'Extension_calibrated_cm'),
+]:
+    if col_in in bg_pitch_df.columns:
+        bg_pitch_df[col_cm] = pd.to_numeric(bg_pitch_df[col_in], errors='coerce') * 2.54
+
+sim_plot_df = similar_df.copy()
+if not sim_plot_df.empty:
+    for col_in, col_cm in [
+        ('InducedVertBreak', 'IVB_cm'),
+        ('VertBreak', 'VB_cm'),
+        ('HorzBreak', 'HB_cm'),
+        ('RelHeight_Correct', 'RelHeight_cm'),
+        ('RelSide', 'RelSide_cm'),
+        (cal_ext_col, 'Extension_calibrated_cm'),
+    ]:
+        if col_in in sim_plot_df.columns:
+            sim_plot_df[col_cm] = pd.to_numeric(sim_plot_df[col_in], errors='coerce') * 2.54
+
+pred_ivb_cm = raw_preds['InducedVertBreak'] * 2.54 if 'InducedVertBreak' in raw_preds else None
+pred_vb_cm = raw_preds['VertBreak'] * 2.54 if 'VertBreak' in raw_preds else None
+pred_hb_cm = raw_preds['HorzBreak'] * 2.54 if 'HorzBreak' in raw_preds else None
+
+row1_col1, row1_col2 = st.columns(2)
+with row1_col1:
+    st.altair_chart(
+        build_xy_scatter_chart(
+            bg_pitch_df, sim_plot_df, "HB_cm", "IVB_cm",
+            "HorzBreak (cm)", "InducedVertBreak (cm)", "IVB - HB 圖",
+            pred_hb_cm, pred_ivb_cm
+        ),
+        use_container_width=True
     )
+
+with row1_col2:
+    st.altair_chart(
+        build_xy_scatter_chart(
+            bg_pitch_df, sim_plot_df, "HB_cm", "VB_cm",
+            "HorzBreak (cm)", "VertBreak (cm)", "VB - HB 圖",
+            pred_hb_cm, pred_vb_cm
+        ),
+        use_container_width=True
+    )
+
+row2_col1, row2_col2 = st.columns(2)
+with row2_col1:
+    st.altair_chart(
+        build_xy_scatter_chart(
+            bg_pitch_df, sim_plot_df, "RelSide_cm", "RelHeight_cm",
+            "RelSide 側度 (cm)", "RelHeight_Correct 出手高度 (cm)", "出手高度 - 側度 圖",
+            rel_side_cm, rel_height_cm
+        ),
+        use_container_width=True
+    )
+
+with row2_col2:
+    st.altair_chart(
+        build_xy_scatter_chart(
+            bg_pitch_df, sim_plot_df, "RelSide_cm", "Extension_calibrated_cm",
+            "RelSide 側度 (cm)", "Extension_calibrated 校正後延伸 (cm)", "延伸 - 出手側度 圖",
+            rel_side_cm, calibrated_extension_cm
+        ),
+        use_container_width=True
+    )
+
+st.divider()
+
+st.subheader(f"🔍 2. 與輸入條件最相似的前 {top_n} 位投手（單一球比賽紀錄）")
+
+if not similar_df.empty:
+    target_cols = ['年', 'pName', '球種', 'RelHeight_Correct', 'RelSide', raw_ext_col, cal_ext_col, 'RelSpeed',
+                   'VertBreak', 'InducedVertBreak', 'HorzBreak', 'Stuff+']
+    display_cols = [c for c in target_cols if c in similar_df.columns]
+    st.dataframe(similar_df[display_cols], use_container_width=True, hide_index=True)
+else:
+    st.warning("找不到足夠的相似樣本。")
