@@ -337,7 +337,6 @@ def build_xy_scatter_chart(
     return alt.layer(*layers).properties(title=chart_title, height=chart_height).interactive()
 
 
-
 # ==========================================
 # 3. 網頁側邊欄：使用者輸入控制區
 # ==========================================
@@ -446,6 +445,7 @@ with row1_col1:
             "HorzBreak (cm)", "InducedVertBreak (cm)", "IVB - HB 圖 (cm)",
             pred_hb_cm, pred_ivb_cm,
             show_zero_axes=True,
+            center_zero=True,
             #chart_height=mid_chart_height,
         ),
         use_container_width=True
