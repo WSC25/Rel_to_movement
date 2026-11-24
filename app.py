@@ -28,7 +28,7 @@ class StadiumExtensionCalibrator:
         data[target_col] = pd.to_numeric(data[target_col], errors='coerce')
         data = data.dropna(subset=[target_col])
 
-        data['pitcher_pitch'] = data[pitcher_col].astype(str) + '_' + data[pitch_col].astype(str)
+        data['pitcher_pitch'] = data[pitcher_col].astype(str) + '_' + data[pitcher_col].astype(str)
         counts = data['pitcher_pitch'].value_counts()
         valid_groups = counts[counts >= 2].index
         data = data[data['pitcher_pitch'].isin(valid_groups)]
@@ -393,12 +393,17 @@ for col_in, col_cm in [
     ('InducedVertBreak', 'IVB_cm'),
     ('VertBreak', 'VB_cm'),
     ('HorzBreak', 'HB_cm'),
+]:
+    if col_in in bg_pitch_df.columns:
+        bg_pitch_df[col_cm] = pd.to_numeric(bg_pitch_df[col_in], errors='coerce') * 2.54
+
+for col_in, col_cm in [
     ('RelHeight_Correct', 'RelHeight_cm'),
     ('RelSide', 'RelSide_cm'),
     (cal_ext_col, 'Extension_calibrated_cm'),
 ]:
     if col_in in bg_pitch_df.columns:
-        bg_pitch_df[col_cm] = pd.to_numeric(bg_pitch_df[col_in], errors='coerce') * 2.54
+        bg_pitch_df[col_cm] = pd.to_numeric(bg_pitch_df[col_in], errors='coerce') * 30.48
 
 sim_plot_df = similar_df.copy()
 if not sim_plot_df.empty:
@@ -406,12 +411,17 @@ if not sim_plot_df.empty:
         ('InducedVertBreak', 'IVB_cm'),
         ('VertBreak', 'VB_cm'),
         ('HorzBreak', 'HB_cm'),
+    ]:
+        if col_in in sim_plot_df.columns:
+            sim_plot_df[col_cm] = pd.to_numeric(sim_plot_df[col_in], errors='coerce') * 2.54
+
+    for col_in, col_cm in [
         ('RelHeight_Correct', 'RelHeight_cm'),
         ('RelSide', 'RelSide_cm'),
         (cal_ext_col, 'Extension_calibrated_cm'),
     ]:
         if col_in in sim_plot_df.columns:
-            sim_plot_df[col_cm] = pd.to_numeric(sim_plot_df[col_in], errors='coerce') * 2.54
+            sim_plot_df[col_cm] = pd.to_numeric(sim_plot_df[col_in], errors='coerce') * 30.48
 
 pred_ivb_cm = raw_preds['InducedVertBreak'] * 2.54 if 'InducedVertBreak' in raw_preds else None
 pred_vb_cm = raw_preds['VertBreak'] * 2.54 if 'VertBreak' in raw_preds else None
