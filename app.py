@@ -449,6 +449,7 @@ with row1_col2:
             "HorzBreak (cm)", "VertBreak (cm)", "VB - HB 圖 (cm)",
             pred_hb_cm, pred_vb_cm,
             show_zero_axes=True,
+            center_zero=False,
             #chart_height=mid_chart_height,
         ),
         use_container_width=True
