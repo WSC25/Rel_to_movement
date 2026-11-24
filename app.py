@@ -459,7 +459,7 @@ with row2_col1:
     st.altair_chart(
         build_xy_scatter_chart(
             bg_pitch_df, sim_plot_df, "RelSide_cm", "RelHeight_cm",
-            "RelSide 側度 (cm)", "RelHeight_Correct 出手高度 (cm)", "出手高度 - 側度 圖 (cm)",
+            "RelSide 側度 (cm)", "RelHeight_Correct 出手高度 (cm)", "面向捕手 出手高度 - 側度 圖 (cm)",
             rel_side_cm, rel_height_cm,
             show_zero_axes=False,
             chart_height=mid_chart_height,
