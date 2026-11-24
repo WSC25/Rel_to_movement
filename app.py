@@ -239,7 +239,8 @@ def build_xy_scatter_chart(
 ):
     layers = []
 
-    if show_zero_axes:
+    # 1. 決定座標軸範圍：只有 show_zero_axes=True 且 center_zero=True 時才強制 (0, 0) 對稱置中
+    if show_zero_axes and center_zero:
         x_domain = _get_symmetric_domain(
             [
                 bg_df[x_col] if (not bg_df.empty and x_col in bg_df.columns) else None,
@@ -256,7 +257,16 @@ def build_xy_scatter_chart(
         )
         x_scale = alt.Scale(domain=x_domain) if x_domain else alt.Undefined
         y_scale = alt.Scale(domain=y_domain) if y_domain else alt.Undefined
+    elif show_zero_axes:
+        # 取消置中，但仍將 0 包含在座標軸範圍內，確保 0,0 輔助線看得到
+        x_scale = alt.Scale(zero=True, nice=True)
+        y_scale = alt.Scale(zero=True, nice=True)
+    else:
+        x_scale = alt.Undefined
+        y_scale = alt.Undefined
 
+    # 2. 只要 show_zero_axes=True，就畫出 0, 0 輔助線
+    if show_zero_axes:
         layers.append(
             alt.Chart(pd.DataFrame({"x0": [0.0]}))
             .mark_rule(color="#475569", strokeWidth=2)
@@ -267,9 +277,6 @@ def build_xy_scatter_chart(
             .mark_rule(color="#475569", strokeWidth=2)
             .encode(y=alt.Y("y0:Q", scale=y_scale, title=y_title))
         )
-    else:
-        x_scale = alt.Undefined
-        y_scale = alt.Undefined
 
     if not bg_df.empty:
         bg_clean = bg_df[[x_col, y_col]].dropna().copy()
@@ -328,6 +335,7 @@ def build_xy_scatter_chart(
         return alt.Chart(pd.DataFrame({"x": [], "y": []})).mark_point().properties(title=chart_title, height=chart_height)
 
     return alt.layer(*layers).properties(title=chart_title, height=chart_height).interactive()
+
 
 
 # ==========================================
