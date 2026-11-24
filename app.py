@@ -446,7 +446,7 @@ with row1_col1:
             "HorzBreak (cm)", "InducedVertBreak (cm)", "IVB - HB 圖 (cm)",
             pred_hb_cm, pred_ivb_cm,
             show_zero_axes=True,
-            chart_height=mid_chart_height,
+            #chart_height=mid_chart_height,
         ),
         use_container_width=True
     )
